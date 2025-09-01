@@ -1,6 +1,6 @@
 module github.com/A-pen-app/errors
 
-go 1.23.11
+go 1.23.0
 
 require (
 	github.com/A-pen-app/logging v0.4.0
