@@ -1,6 +1,8 @@
 package errors
 
 import (
+	"errors"
+	
 	"github.com/A-pen-app/logging"
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel/trace"
@@ -42,7 +44,8 @@ func handleError(ctx *gin.Context, err error) {
 	var actualErr error
 	var details map[string]any
 
-	if appErr, ok := err.(*AppError); ok {
+	var appErr *AppError
+	if errors.As(err, &appErr) {
 		actualErr = appErr.Unwrap()
 		details = appErr.Data()
 	} else {
