@@ -17,14 +17,14 @@ const (
 	ErrorTypePost ErrorType = "post"
 )
 
-type ErrorKey string
+type ErrorCode string
 
 const (
-	KeyNotFound         ErrorKey = "NOT_FOUND"
-	KeyNotAllowed       ErrorKey = "ACTION_NOT_ALLOWED"
-	KeyWrongParams      ErrorKey = "WRONG_PARAMETER"
-	KeyPermissionDenied ErrorKey = "PERMISSION_DENIED"
-	KeyInternalError    ErrorKey = "INTERNAL_ERROR"
+	KeyNotFound         ErrorCode = "NOT_FOUND"
+	KeyNotAllowed       ErrorCode = "ACTION_NOT_ALLOWED"
+	KeyWrongParams      ErrorCode = "WRONG_PARAMETER"
+	KeyPermissionDenied ErrorCode = "PERMISSION_DENIED"
+	KeyInternalError    ErrorCode = "INTERNAL_ERROR"
 )
 
 var (
@@ -35,13 +35,18 @@ var (
 	ErrorInternalError    = errors.New("internal system error")
 )
 
-var errorKeyMap = map[error]ErrorKey{
-	ErrorNotFound:         KeyNotFound,
-	ErrorNotAllowed:       KeyNotAllowed,
-	ErrorWrongParams:      KeyWrongParams,
-	ErrorPermissionDenied: KeyPermissionDenied,
-	ErrorInternalError:    KeyInternalError,
-	sql.ErrNoRows:         KeyNotFound,
+type ErrorMapping struct {
+	Code       ErrorCode
+	StatusCode int
+}
+
+var errorMappings = map[error]ErrorMapping{
+	ErrorNotFound:         {KeyNotFound, http.StatusNotFound},
+	ErrorNotAllowed:       {KeyNotAllowed, http.StatusForbidden},
+	ErrorWrongParams:      {KeyWrongParams, http.StatusBadRequest},
+	ErrorPermissionDenied: {KeyPermissionDenied, http.StatusForbidden},
+	ErrorInternalError:    {KeyInternalError, http.StatusInternalServerError},
+	sql.ErrNoRows:         {KeyNotFound, http.StatusNotFound},
 }
 
 type AppError struct {
@@ -94,40 +99,17 @@ func parseKeyValues(keyValues []any) map[string]any {
 	return data
 }
 
-// getKey returns the API key for a given error, or KeyInternalError if not found.
-func getKey(err error) ErrorKey {
+// getErrorMapping returns the unified error mapping for a given error.
+func getErrorMapping(err error) ErrorMapping {
 	// Check for binding errors first
 	if isBindingError(err) {
-		return KeyWrongParams
+		return ErrorMapping{KeyWrongParams, http.StatusBadRequest}
 	}
 
-	if key, exists := errorKeyMap[err]; exists {
-		return key
+	if mapping, exists := errorMappings[err]; exists {
+		return mapping
 	}
-	return KeyInternalError
-}
-
-func getHTTPStatusCode(err error) int {
-	switch {
-	// 400 Bad Request - includes binding errors
-	case errors.Is(err, ErrorWrongParams),
-		isBindingError(err):
-		return http.StatusBadRequest
-
-	// 403 Forbidden
-	case errors.Is(err, ErrorNotAllowed),
-		errors.Is(err, ErrorPermissionDenied):
-		return http.StatusForbidden
-
-	// 404 Not Found
-	case errors.Is(err, ErrorNotFound),
-		errors.Is(err, sql.ErrNoRows):
-		return http.StatusNotFound
-
-	// 500 Internal Server Error
-	default:
-		return http.StatusInternalServerError
-	}
+	return ErrorMapping{KeyInternalError, http.StatusInternalServerError}
 }
 func isBindingError(err error) bool {
 	if err == nil {

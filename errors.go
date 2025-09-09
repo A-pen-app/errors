@@ -2,7 +2,7 @@ package errors
 
 import (
 	"errors"
-	
+
 	"github.com/A-pen-app/logging"
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel/trace"
@@ -54,8 +54,9 @@ func handleError(ctx *gin.Context, err error) {
 	}
 
 	// Unified processing
-	errorKey := string(getKey(actualErr))
-	status := getHTTPStatusCode(actualErr)
+	mapping := getErrorMapping(actualErr)
+	errorKey := string(mapping.Code)
+	status := mapping.StatusCode
 	logging.Error(ctx.Request.Context(), err.Error())
 
 	// Get request ID for tracing
