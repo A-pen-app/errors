@@ -81,3 +81,40 @@ All errors are returned as structured JSON:
   "request_id": "trace-id-from-opentelemetry"
 }
 ```
+
+## Code Structure and Error Flow
+
+### Core Components
+
+The error handling system consists of two main files:
+
+#### `errors.go` - Error Processing Engine
+- `Wrap()` function: Wraps errors with contextual data
+- `Handle()` function: Gin middleware wrapper for automatic error handling  
+- `handleError()` function: Core error processing that converts business errors to HTTP responses
+
+#### `models.go` - Error Definitions and Mappings
+- **Predefined Errors**: Standard business logic errors
+- **Error Key Mapping**: Maps errors to API response codes
+- **AppError Structure**: Wraps errors with additional context
+- **HTTP Mapping Functions**: Convert errors to HTTP status codes
+
+### Error Flow Process
+
+1. **Error Creation**: Business logic creates errors using predefined constants or custom errors
+2. **Error Wrapping**: `Wrap()` adds contextual data without losing the original error
+3. **Error Handling**: `Handle()` catches returned errors from handlers
+4. **Error Processing**: `handleError()` determines the appropriate HTTP response
+5. **Response Generation**: Structured JSON response sent to client with logging
+
+### Error Type Mappings
+
+| Business Error | Error Key | HTTP Status |
+|----------------|-----------|-------------|
+| `ErrorNotFound` | `NOT_FOUND` | 404 |
+| `ErrorNotAllowed` | `ACTION_NOT_ALLOWED` | 403 |
+| `ErrorWrongParams` | `WRONG_PARAMETER` | 400 |
+| `ErrorPermissionDenied` | `PERMISSION_DENIED` | 403 |
+| `ErrorInternalError` | `INTERNAL_ERROR` | 500 |
+| `sql.ErrNoRows` | `NOT_FOUND` | 404 |
+| Binding Errors | `WRONG_PARAMETER` | 400 |
