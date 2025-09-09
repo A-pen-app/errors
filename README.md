@@ -10,6 +10,8 @@ A unified error handling library for Go applications, providing structured error
 - **OpenTelemetry Support**: Built-in request tracing and observability
 - **Structured Logging**: Integration with logging package for consistent error logging
 - **Validation Error Handling**: Automatic detection and handling of JSON binding and validation errors
+- **Fallback Error Handling**: Undefined errors automatically mapped to 500 Internal Server Error
+- **SQL Integration**: Built-in support for `sql.ErrNoRows` mapping to 404 Not Found
 
 ## Installation
 
@@ -59,12 +61,17 @@ r.POST("/posts", errors.Handle(func(ctx *gin.Context) error {
 The library provides common business logic errors:
 
 ```go
-errors.ErrorNotFound         // "data not found" -> 404
-errors.ErrorNotAllowed       // "action not allowed" -> 403  
-errors.ErrorWrongParams      // "wrong parameters" -> 400
-errors.ErrorPermissionDenied // "permission denied" -> 403
-errors.ErrorInternalError    // "internal system error" -> 500
+errors.ErrorNotFound         // "data not found" -> 404 NOT_FOUND
+errors.ErrorNotAllowed       // "action not allowed" -> 403 ACTION_NOT_ALLOWED
+errors.ErrorWrongParams      // "wrong parameters" -> 400 WRONG_PARAMETER
+errors.ErrorPermissionDenied // "permission denied" -> 403 PERMISSION_DENIED
+errors.ErrorInternalError    // "internal system error" -> 500 INTERNAL_ERROR
 ```
+
+**Additional Supported Errors:**
+- `sql.ErrNoRows` automatically mapped to `NOT_FOUND` (404)
+- JSON binding/validation errors automatically mapped to `WRONG_PARAMETER` (400)
+- Any undefined custom error defaults to `INTERNAL_ERROR` (500)
 
 ### Error Response Format
 
@@ -118,3 +125,24 @@ The error handling system consists of two main files:
 | `ErrorInternalError` | `INTERNAL_ERROR` | 500 |
 | `sql.ErrNoRows` | `NOT_FOUND` | 404 |
 | Binding Errors | `WRONG_PARAMETER` | 400 |
+| **Any undefined error** | `INTERNAL_ERROR` | **500** |
+
+### Error Handling Details
+
+**Undefined Error Behavior:**
+- Any error not explicitly defined in the error mapping will be treated as an `INTERNAL_ERROR`
+- These undefined errors automatically receive HTTP status code `500` (Internal Server Error)
+- The original error message is preserved and sent in the response
+- All undefined errors are logged for debugging purposes
+
+**Special Error Detection:**
+- **JSON Binding Errors**: Automatically detected and mapped to `WRONG_PARAMETER` (400)
+  - `json.SyntaxError`
+  - `json.UnmarshalTypeError` 
+  - `validator.ValidationErrors`
+  - `validator.InvalidValidationError`
+
+**Error Context Preservation:**
+- When using `Wrap()`, original error information is preserved
+- Additional context data is stored separately and included in response details
+- Error chain remains intact for proper error handling with `errors.As()` and `errors.Is()`
