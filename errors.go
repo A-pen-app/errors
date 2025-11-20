@@ -66,7 +66,7 @@ func handleError(ctx *gin.Context, err error) {
 	}
 
 	// Send error response
-	ctx.AbortWithStatusJSON(status, httpError{
+	ctx.AbortWithStatusJSON(status, HttpError{
 		Code:      errorKey,
 		Message:   actualErr.Error(),
 		Details:   details,

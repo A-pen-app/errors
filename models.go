@@ -77,7 +77,7 @@ func (e *AppError) Unwrap() error {
 	return e.cause
 }
 
-type httpError struct {
+type HttpError struct {
 	Code      string         `json:"code"`
 	Message   string         `json:"message"`
 	Details   map[string]any `json:"details,omitempty"`
