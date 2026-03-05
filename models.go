@@ -23,6 +23,7 @@ const (
 	KeyNotFound         ErrorCode = "NOT_FOUND"
 	KeyNotAllowed       ErrorCode = "ACTION_NOT_ALLOWED"
 	KeyWrongParams      ErrorCode = "WRONG_PARAMETER"
+	KeyUnauthorized     ErrorCode = "UNAUTHORIZED"
 	KeyPermissionDenied ErrorCode = "PERMISSION_DENIED"
 	KeyInternalError    ErrorCode = "INTERNAL_ERROR"
 )
@@ -31,6 +32,7 @@ var (
 	ErrorNotFound         = errors.New("data not found")
 	ErrorNotAllowed       = errors.New("action not allowed")
 	ErrorWrongParams      = errors.New("wrong parameters")
+	ErrorUnauthorized     = errors.New("unauthorized")
 	ErrorPermissionDenied = errors.New("permission denied")
 	ErrorInternalError    = errors.New("internal system error")
 )
@@ -44,6 +46,7 @@ var errorMappings = map[error]ErrorMapping{
 	ErrorNotFound:         {KeyNotFound, http.StatusNotFound},
 	ErrorNotAllowed:       {KeyNotAllowed, http.StatusForbidden},
 	ErrorWrongParams:      {KeyWrongParams, http.StatusBadRequest},
+	ErrorUnauthorized:     {KeyUnauthorized, http.StatusUnauthorized},
 	ErrorPermissionDenied: {KeyPermissionDenied, http.StatusForbidden},
 	ErrorInternalError:    {KeyInternalError, http.StatusInternalServerError},
 	sql.ErrNoRows:         {KeyNotFound, http.StatusNotFound},
