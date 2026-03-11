@@ -24,8 +24,9 @@ const (
 	KeyNotAllowed       ErrorCode = "ACTION_NOT_ALLOWED"
 	KeyWrongParams      ErrorCode = "WRONG_PARAMETER"
 	KeyUnauthorized     ErrorCode = "UNAUTHORIZED"
-	KeyPermissionDenied ErrorCode = "PERMISSION_DENIED"
-	KeyInternalError    ErrorCode = "INTERNAL_ERROR"
+	KeyPermissionDenied      ErrorCode = "PERMISSION_DENIED"
+	KeyUnprocessableEntity   ErrorCode = "UNPROCESSABLE_ENTITY"
+	KeyInternalError         ErrorCode = "INTERNAL_ERROR"
 )
 
 var (
@@ -33,8 +34,9 @@ var (
 	ErrorNotAllowed       = errors.New("action not allowed")
 	ErrorWrongParams      = errors.New("wrong parameters")
 	ErrorUnauthorized     = errors.New("unauthorized")
-	ErrorPermissionDenied = errors.New("permission denied")
-	ErrorInternalError    = errors.New("internal system error")
+	ErrorPermissionDenied    = errors.New("permission denied")
+	ErrorUnprocessableEntity = errors.New("unprocessable entity")
+	ErrorInternalError       = errors.New("internal system error")
 )
 
 type ErrorMapping struct {
@@ -47,8 +49,9 @@ var errorMappings = map[error]ErrorMapping{
 	ErrorNotAllowed:       {KeyNotAllowed, http.StatusForbidden},
 	ErrorWrongParams:      {KeyWrongParams, http.StatusBadRequest},
 	ErrorUnauthorized:     {KeyUnauthorized, http.StatusUnauthorized},
-	ErrorPermissionDenied: {KeyPermissionDenied, http.StatusForbidden},
-	ErrorInternalError:    {KeyInternalError, http.StatusInternalServerError},
+	ErrorPermissionDenied:    {KeyPermissionDenied, http.StatusForbidden},
+	ErrorUnprocessableEntity: {KeyUnprocessableEntity, http.StatusUnprocessableEntity},
+	ErrorInternalError:       {KeyInternalError, http.StatusInternalServerError},
 	sql.ErrNoRows:         {KeyNotFound, http.StatusNotFound},
 }
 
