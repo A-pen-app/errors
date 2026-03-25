@@ -14,26 +14,27 @@ import (
 type ErrorType string
 
 const (
-	ErrorTypePost ErrorType = "post"
+	ErrorTypePost  ErrorType = "post"
+	ErrorTypeLogin ErrorType = "login"
 )
 
 type ErrorCode string
 
 const (
-	KeyNotFound         ErrorCode = "NOT_FOUND"
-	KeyNotAllowed       ErrorCode = "ACTION_NOT_ALLOWED"
-	KeyWrongParams      ErrorCode = "WRONG_PARAMETER"
-	KeyUnauthorized     ErrorCode = "UNAUTHORIZED"
-	KeyPermissionDenied      ErrorCode = "PERMISSION_DENIED"
-	KeyUnprocessableEntity   ErrorCode = "UNPROCESSABLE_ENTITY"
-	KeyInternalError         ErrorCode = "INTERNAL_ERROR"
+	KeyNotFound            ErrorCode = "NOT_FOUND"
+	KeyNotAllowed          ErrorCode = "ACTION_NOT_ALLOWED"
+	KeyWrongParams         ErrorCode = "WRONG_PARAMETER"
+	KeyUnauthorized        ErrorCode = "UNAUTHORIZED"
+	KeyPermissionDenied    ErrorCode = "PERMISSION_DENIED"
+	KeyUnprocessableEntity ErrorCode = "UNPROCESSABLE_ENTITY"
+	KeyInternalError       ErrorCode = "INTERNAL_ERROR"
 )
 
 var (
-	ErrorNotFound         = errors.New("data not found")
-	ErrorNotAllowed       = errors.New("action not allowed")
-	ErrorWrongParams      = errors.New("wrong parameters")
-	ErrorUnauthorized     = errors.New("unauthorized")
+	ErrorNotFound            = errors.New("data not found")
+	ErrorNotAllowed          = errors.New("action not allowed")
+	ErrorWrongParams         = errors.New("wrong parameters")
+	ErrorUnauthorized        = errors.New("unauthorized")
 	ErrorPermissionDenied    = errors.New("permission denied")
 	ErrorUnprocessableEntity = errors.New("unprocessable entity")
 	ErrorInternalError       = errors.New("internal system error")
@@ -45,14 +46,14 @@ type ErrorMapping struct {
 }
 
 var errorMappings = map[error]ErrorMapping{
-	ErrorNotFound:         {KeyNotFound, http.StatusNotFound},
-	ErrorNotAllowed:       {KeyNotAllowed, http.StatusForbidden},
-	ErrorWrongParams:      {KeyWrongParams, http.StatusBadRequest},
-	ErrorUnauthorized:     {KeyUnauthorized, http.StatusUnauthorized},
+	ErrorNotFound:            {KeyNotFound, http.StatusNotFound},
+	ErrorNotAllowed:          {KeyNotAllowed, http.StatusForbidden},
+	ErrorWrongParams:         {KeyWrongParams, http.StatusBadRequest},
+	ErrorUnauthorized:        {KeyUnauthorized, http.StatusUnauthorized},
 	ErrorPermissionDenied:    {KeyPermissionDenied, http.StatusForbidden},
 	ErrorUnprocessableEntity: {KeyUnprocessableEntity, http.StatusUnprocessableEntity},
 	ErrorInternalError:       {KeyInternalError, http.StatusInternalServerError},
-	sql.ErrNoRows:         {KeyNotFound, http.StatusNotFound},
+	sql.ErrNoRows:            {KeyNotFound, http.StatusNotFound},
 }
 
 type AppError struct {
