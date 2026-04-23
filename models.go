@@ -28,6 +28,10 @@ const (
 	KeyPermissionDenied    ErrorCode = "PERMISSION_DENIED"
 	KeyUnprocessableEntity ErrorCode = "UNPROCESSABLE_ENTITY"
 	KeyInternalError       ErrorCode = "INTERNAL_ERROR"
+	KeyDuplicateEntry      ErrorCode = "DUPLICATE_ENTRY"
+	KeyInsufficientQuota   ErrorCode = "INSUFFICIENT_QUOTA"
+	KeyUserNotVerified     ErrorCode = "USER_NOT_VERIFIED"
+	KeyUnsupported         ErrorCode = "UNSUPPORTED"
 )
 
 var (
@@ -38,6 +42,10 @@ var (
 	ErrorPermissionDenied    = errors.New("permission denied")
 	ErrorUnprocessableEntity = errors.New("unprocessable entity")
 	ErrorInternalError       = errors.New("internal system error")
+	ErrorDuplicateEntry      = errors.New("duplicate entry")
+	ErrorInsufficientQuota   = errors.New("insufficient quota")
+	ErrorUserNotVerified     = errors.New("user not verified")
+	ErrorUnsupported         = errors.New("unsupported")
 )
 
 type ErrorMapping struct {
@@ -53,6 +61,10 @@ var errorMappings = map[error]ErrorMapping{
 	ErrorPermissionDenied:    {KeyPermissionDenied, http.StatusForbidden},
 	ErrorUnprocessableEntity: {KeyUnprocessableEntity, http.StatusUnprocessableEntity},
 	ErrorInternalError:       {KeyInternalError, http.StatusInternalServerError},
+	ErrorDuplicateEntry:      {KeyDuplicateEntry, http.StatusConflict},
+	ErrorInsufficientQuota:   {KeyInsufficientQuota, http.StatusPaymentRequired},
+	ErrorUserNotVerified:     {KeyUserNotVerified, http.StatusForbidden},
+	ErrorUnsupported:         {KeyUnsupported, http.StatusUnprocessableEntity},
 	sql.ErrNoRows:            {KeyNotFound, http.StatusNotFound},
 }
 
