@@ -32,6 +32,7 @@ const (
 	KeyInsufficientQuota   ErrorCode = "INSUFFICIENT_QUOTA"
 	KeyUserNotVerified     ErrorCode = "USER_NOT_VERIFIED"
 	KeyUnsupported         ErrorCode = "UNSUPPORTED"
+	KeyConflict            ErrorCode = "CONFLICT"
 )
 
 var (
@@ -46,6 +47,7 @@ var (
 	ErrorInsufficientQuota   = errors.New("insufficient quota")
 	ErrorUserNotVerified     = errors.New("user not verified")
 	ErrorUnsupported         = errors.New("unsupported")
+	ErrorConflict            = errors.New("conflict")
 )
 
 type ErrorMapping struct {
@@ -65,6 +67,7 @@ var errorMappings = map[error]ErrorMapping{
 	ErrorInsufficientQuota:   {KeyInsufficientQuota, http.StatusPaymentRequired},
 	ErrorUserNotVerified:     {KeyUserNotVerified, http.StatusForbidden},
 	ErrorUnsupported:         {KeyUnsupported, http.StatusUnprocessableEntity},
+	ErrorConflict:            {KeyConflict, http.StatusConflict},
 	sql.ErrNoRows:            {KeyNotFound, http.StatusNotFound},
 }
 
