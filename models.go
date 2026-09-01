@@ -1,6 +1,7 @@
 package errors
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -33,7 +34,14 @@ const (
 	KeyUserNotVerified     ErrorCode = "USER_NOT_VERIFIED"
 	KeyUnsupported         ErrorCode = "UNSUPPORTED"
 	KeyConflict            ErrorCode = "CONFLICT"
+	KeyClientClosed        ErrorCode = "CLIENT_CLOSED_REQUEST"
 )
+
+// clientClosedRequest is nginx's 499: the client went away before the response.
+const clientClosedRequest = 499
+
+// sqlStateQueryCanceled is Postgres' code for a query cancelled on request.
+const sqlStateQueryCanceled = "57014"
 
 var (
 	ErrorNotFound            = errors.New("data not found")
@@ -133,6 +141,27 @@ func getErrorMapping(err error) ErrorMapping {
 	}
 	return ErrorMapping{KeyInternalError, http.StatusInternalServerError}
 }
+
+// sqlStater is satisfied by lib/pq's and pgx's error types, so matching a
+// SQLSTATE needs no driver dependency.
+type sqlStater interface {
+	SQLState() string
+}
+
+// IsClientCancellation reports whether the client cancelled the request itself:
+// the request context is cancelled and the error is that cancellation.
+func IsClientCancellation(ctx context.Context, err error) bool {
+	if ctx.Err() != context.Canceled {
+		return false
+	}
+	if errors.Is(err, context.Canceled) {
+		return true
+	}
+
+	var state sqlStater
+	return errors.As(err, &state) && state.SQLState() == sqlStateQueryCanceled
+}
+
 func isBindingError(err error) bool {
 	if err == nil {
 		return false

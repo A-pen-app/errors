@@ -125,6 +125,7 @@ The error handling system consists of two main files:
 | `ErrorInternalError` | `INTERNAL_ERROR` | 500 |
 | `sql.ErrNoRows` | `NOT_FOUND` | 404 |
 | Binding Errors | `WRONG_PARAMETER` | 400 |
+| Client Cancellations | `CLIENT_CLOSED_REQUEST` | 499 |
 | **Any undefined error** | `INTERNAL_ERROR` | **500** |
 
 ### Error Handling Details
@@ -141,6 +142,10 @@ The error handling system consists of two main files:
   - `json.UnmarshalTypeError` 
   - `validator.ValidationErrors`
   - `validator.InvalidValidationError`
+- **Client Cancellations**: Detected and mapped to `CLIENT_CLOSED_REQUEST` (499), logged at warn rather than error
+  - Requires both a cancelled request context and an error that is the cancellation: `context.Canceled` through any wrapping, or SQLSTATE `57014`
+  - A server-side `WithCancel`, a server deadline, or an unrelated error landing during a disconnect all stay `INTERNAL_ERROR` (500)
+  - `IsClientCancellation(ctx, err)` is exported for handlers that respond without `Handle()`
 
 **Error Context Preservation:**
 - When using `Wrap()`, original error information is preserved

@@ -2,6 +2,7 @@ package errors
 
 import (
 	"errors"
+	"net/http"
 
 	"github.com/A-pen-app/logging"
 	"github.com/gin-gonic/gin"
@@ -57,7 +58,16 @@ func handleError(ctx *gin.Context, err error) {
 	mapping := getErrorMapping(actualErr)
 	errorKey := string(mapping.Code)
 	status := mapping.StatusCode
-	logging.Error(ctx.Request.Context(), err.Error())
+
+	if status >= http.StatusInternalServerError && IsClientCancellation(ctx.Request.Context(), err) {
+		status = clientClosedRequest
+		errorKey = string(KeyClientClosed)
+	}
+	if status == clientClosedRequest {
+		logging.Warn(ctx.Request.Context(), err.Error())
+	} else {
+		logging.Error(ctx.Request.Context(), err.Error())
+	}
 
 	// Get request ID for tracing
 	requestID := ""
