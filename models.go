@@ -34,6 +34,7 @@ const (
 	KeyUserNotVerified     ErrorCode = "USER_NOT_VERIFIED"
 	KeyUnsupported         ErrorCode = "UNSUPPORTED"
 	KeyConflict            ErrorCode = "CONFLICT"
+	KeyTooManyRequests     ErrorCode = "TOO_MANY_REQUESTS"
 	KeyClientClosed        ErrorCode = "CLIENT_CLOSED_REQUEST"
 )
 
@@ -56,6 +57,7 @@ var (
 	ErrorUserNotVerified     = errors.New("user not verified")
 	ErrorUnsupported         = errors.New("unsupported")
 	ErrorConflict            = errors.New("conflict")
+	ErrorTooManyRequests     = errors.New("too many requests")
 )
 
 type ErrorMapping struct {
@@ -76,6 +78,7 @@ var errorMappings = map[error]ErrorMapping{
 	ErrorUserNotVerified:     {KeyUserNotVerified, http.StatusForbidden},
 	ErrorUnsupported:         {KeyUnsupported, http.StatusUnprocessableEntity},
 	ErrorConflict:            {KeyConflict, http.StatusConflict},
+	ErrorTooManyRequests:     {KeyTooManyRequests, http.StatusTooManyRequests},
 	sql.ErrNoRows:            {KeyNotFound, http.StatusNotFound},
 }
 
