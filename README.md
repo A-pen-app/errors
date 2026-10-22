@@ -73,6 +73,21 @@ errors.ErrorInternalError    // "internal system error" -> 500 INTERNAL_ERROR
 - JSON binding/validation errors automatically mapped to `WRONG_PARAMETER` (400)
 - Any undefined custom error defaults to `INTERNAL_ERROR` (500)
 
+### Service-specific Errors
+
+A service defines its own codes with `Define`, from package-level var declarations:
+
+```go
+var ErrTipSelf = errors.Define("TIP_SELF", http.StatusForbidden, "cannot tip yourself")
+```
+
+- `Handle` answers with that code and status even when the error is wrapped by `fmt.Errorf("%w")` or `errors.Wrap`
+- The message is sent to the client, so keep it safe to expose
+- `Define` panics on a blank code, a code already in use (built-in or defined), or a status outside 4xx and 5xx
+- Built-in errors still match only by identity: a built-in error wrapped by `fmt.Errorf("%w")` stays `INTERNAL_ERROR` (500)
+
+Every key-value pair passed to `Wrap` is sent to the client as `details`, and nested `Wrap` data also shows up in `message`. Pass `Wrap` only what the client may see, and log the rest.
+
 ### Error Response Format
 
 All errors are returned as structured JSON:

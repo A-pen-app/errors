@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -82,6 +83,62 @@ var errorMappings = map[error]ErrorMapping{
 	sql.ErrNoRows:            {KeyNotFound, http.StatusNotFound},
 }
 
+// definedError is a service-specific error that carries its own response mapping.
+type definedError struct {
+	mapping ErrorMapping
+	message string
+}
+
+func (e *definedError) Error() string {
+	return e.message
+}
+
+var (
+	definedCodesMu sync.Mutex
+	// definedCodes holds every code a response can carry, so Define cannot reuse one.
+	definedCodes = map[ErrorCode]struct{}{
+		KeyNotFound:            {},
+		KeyNotAllowed:          {},
+		KeyWrongParams:         {},
+		KeyUnauthorized:        {},
+		KeyPermissionDenied:    {},
+		KeyUnprocessableEntity: {},
+		KeyInternalError:       {},
+		KeyDuplicateEntry:      {},
+		KeyInsufficientQuota:   {},
+		KeyUserNotVerified:     {},
+		KeyUnsupported:         {},
+		KeyConflict:            {},
+		KeyTooManyRequests:     {},
+		KeyClientClosed:        {},
+	}
+)
+
+// Define creates a service-specific error that Handle answers with the given code and HTTP status.
+// The message is sent to the client, so it must be safe to expose.
+// Call it from package-level var declarations: it panics on a blank or already used code,
+// or a status outside 4xx and 5xx.
+func Define(code ErrorCode, status int, message string) error {
+	if strings.TrimSpace(string(code)) == "" {
+		panic("errors: Define with a blank code")
+	}
+	if status < http.StatusBadRequest || status > 599 {
+		panic(fmt.Sprintf("errors: Define %s with status %d, want 4xx or 5xx", code, status))
+	}
+
+	definedCodesMu.Lock()
+	defer definedCodesMu.Unlock()
+	if _, exists := definedCodes[code]; exists {
+		panic(fmt.Sprintf("errors: Define %s, code already in use", code))
+	}
+	definedCodes[code] = struct{}{}
+
+	return &definedError{
+		mapping: ErrorMapping{code, status},
+		message: message,
+	}
+}
+
 type AppError struct {
 	cause error
 	data  map[string]any
@@ -137,6 +194,11 @@ func getErrorMapping(err error) ErrorMapping {
 	// Check for binding errors first
 	if isBindingError(err) {
 		return ErrorMapping{KeyWrongParams, http.StatusBadRequest}
+	}
+
+	var defined *definedError
+	if errors.As(err, &defined) {
+		return defined.mapping
 	}
 
 	if mapping, exists := errorMappings[err]; exists {
