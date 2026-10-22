@@ -96,34 +96,28 @@ func (e *definedError) Error() string {
 var (
 	definedCodesMu sync.Mutex
 	// definedCodes holds every code a response can carry, so Define cannot reuse one.
-	definedCodes = map[ErrorCode]struct{}{
-		KeyNotFound:            {},
-		KeyNotAllowed:          {},
-		KeyWrongParams:         {},
-		KeyUnauthorized:        {},
-		KeyPermissionDenied:    {},
-		KeyUnprocessableEntity: {},
-		KeyInternalError:       {},
-		KeyDuplicateEntry:      {},
-		KeyInsufficientQuota:   {},
-		KeyUserNotVerified:     {},
-		KeyUnsupported:         {},
-		KeyConflict:            {},
-		KeyTooManyRequests:     {},
-		KeyClientClosed:        {},
-	}
+	definedCodes = builtInCodes()
 )
+
+// builtInCodes returns the codes Handle answers with before any Define.
+func builtInCodes() map[ErrorCode]struct{} {
+	codes := map[ErrorCode]struct{}{KeyClientClosed: {}}
+	for _, mapping := range errorMappings {
+		codes[mapping.Code] = struct{}{}
+	}
+	return codes
+}
 
 // Define creates a service-specific error that Handle answers with the given code and HTTP status.
 // The message is sent to the client, so it must be safe to expose.
-// Call it from package-level var declarations: it panics on a blank or already used code,
-// or a status outside 4xx and 5xx.
+// Call it from package-level var declarations: it panics on a blank, padded or already used code,
+// or a status outside 4xx and 5xx. 499 is reserved for client disconnects.
 func Define(code ErrorCode, status int, message string) error {
-	if strings.TrimSpace(string(code)) == "" {
-		panic("errors: Define with a blank code")
+	if code == "" || strings.TrimSpace(string(code)) != string(code) {
+		panic(fmt.Sprintf("errors: Define with a blank or padded code %q", code))
 	}
-	if status < http.StatusBadRequest || status > 599 {
-		panic(fmt.Sprintf("errors: Define %s with status %d, want 4xx or 5xx", code, status))
+	if status < http.StatusBadRequest || status > 599 || status == clientClosedRequest {
+		panic(fmt.Sprintf("errors: Define %s with status %d, want 4xx or 5xx other than 499", code, status))
 	}
 
 	definedCodesMu.Lock()

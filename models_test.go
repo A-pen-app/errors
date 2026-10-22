@@ -84,8 +84,6 @@ func TestGetErrorMapping(t *testing.T) {
 }
 
 func TestDefinePanics(t *testing.T) {
-	Define("TEST_TAKEN", http.StatusBadRequest, "taken")
-
 	cases := []struct {
 		name   string
 		code   ErrorCode
@@ -95,8 +93,11 @@ func TestDefinePanics(t *testing.T) {
 		{"blank code", "  ", http.StatusBadRequest},
 		{"built-in code", KeyNotFound, http.StatusNotFound},
 		{"client closed code", KeyClientClosed, http.StatusBadRequest},
-		{"already defined code", "TEST_TAKEN", http.StatusBadRequest},
+		{"padded code", "TEST_PADDED ", http.StatusBadRequest},
+		{"padded built-in code", "NOT_FOUND ", http.StatusNotFound},
+		{"already defined code", "TEST_DEFINED", http.StatusBadRequest},
 		{"2xx status", "TEST_OK", http.StatusOK},
+		{"client closed status", "TEST_499", clientClosedRequest},
 		{"status above 5xx", "TEST_600", 600},
 	}
 
@@ -109,5 +110,16 @@ func TestDefinePanics(t *testing.T) {
 			}()
 			Define(c.code, c.status, "msg")
 		})
+	}
+}
+
+func TestBuiltInCodesCoverMappings(t *testing.T) {
+	for err, mapping := range errorMappings {
+		if _, ok := definedCodes[mapping.Code]; !ok {
+			t.Errorf("code %s of %v is not reserved", mapping.Code, err)
+		}
+	}
+	if _, ok := definedCodes[KeyClientClosed]; !ok {
+		t.Errorf("code %s is not reserved", KeyClientClosed)
 	}
 }
