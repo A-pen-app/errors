@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -82,6 +83,56 @@ var errorMappings = map[error]ErrorMapping{
 	sql.ErrNoRows:            {KeyNotFound, http.StatusNotFound},
 }
 
+// definedError is a service-specific error that carries its own response mapping.
+type definedError struct {
+	mapping ErrorMapping
+	message string
+}
+
+func (e *definedError) Error() string {
+	return e.message
+}
+
+var (
+	definedCodesMu sync.Mutex
+	// definedCodes holds every code a response can carry, so Define cannot reuse one.
+	definedCodes = builtInCodes()
+)
+
+// builtInCodes returns the codes Handle answers with before any Define.
+func builtInCodes() map[ErrorCode]struct{} {
+	codes := map[ErrorCode]struct{}{KeyClientClosed: {}}
+	for _, mapping := range errorMappings {
+		codes[mapping.Code] = struct{}{}
+	}
+	return codes
+}
+
+// Define creates a service-specific error that Handle answers with the given code and HTTP status.
+// The message is sent to the client, so it must be safe to expose.
+// Call it from package-level var declarations: it panics on a blank, padded or already used code,
+// or a status outside 4xx and 5xx. 499 is reserved for client disconnects.
+func Define(code ErrorCode, status int, message string) error {
+	if code == "" || strings.TrimSpace(string(code)) != string(code) {
+		panic(fmt.Sprintf("errors: Define with a blank or padded code %q", code))
+	}
+	if status < http.StatusBadRequest || status > 599 || status == clientClosedRequest {
+		panic(fmt.Sprintf("errors: Define %s with status %d, want 4xx or 5xx other than 499", code, status))
+	}
+
+	definedCodesMu.Lock()
+	defer definedCodesMu.Unlock()
+	if _, exists := definedCodes[code]; exists {
+		panic(fmt.Sprintf("errors: Define %s, code already in use", code))
+	}
+	definedCodes[code] = struct{}{}
+
+	return &definedError{
+		mapping: ErrorMapping{code, status},
+		message: message,
+	}
+}
+
 type AppError struct {
 	cause error
 	data  map[string]any
@@ -139,10 +190,25 @@ func getErrorMapping(err error) ErrorMapping {
 		return ErrorMapping{KeyWrongParams, http.StatusBadRequest}
 	}
 
+	var defined *definedError
+	if errors.As(err, &defined) {
+		return defined.mapping
+	}
+
 	if mapping, exists := errorMappings[err]; exists {
 		return mapping
 	}
 	return ErrorMapping{KeyInternalError, http.StatusInternalServerError}
+}
+
+// responseMessage returns the message sent to the client. A defined error answers
+// with its own message, so text wrapped around it stays in the log.
+func responseMessage(err error) string {
+	var defined *definedError
+	if errors.As(err, &defined) {
+		return defined.message
+	}
+	return err.Error()
 }
 
 // sqlStater is satisfied by lib/pq's and pgx's error types, so matching a
