@@ -49,6 +49,32 @@ func TestHandleDefinedError(t *testing.T) {
 	}
 }
 
+func TestHandleDefinedErrorHidesWrappedText(t *testing.T) {
+	cases := []struct {
+		name string
+		err  error
+	}{
+		{"wrapped", fmt.Errorf("internal receipt token=secret: %w", errTestPaidNotRecorded)},
+		{"behind nested AppError", Wrap(Wrap(errTestPaidNotRecorded, "token", "secret"), "intent_id", "i1")},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			_, body := serve(context.Background(), c.err)
+			if body.Code != "TEST_PAID_NOT_RECORDED" || body.Message != "paid but not recorded" {
+				t.Errorf("got %s %q, want TEST_PAID_NOT_RECORDED %q", body.Code, body.Message, "paid but not recorded")
+			}
+		})
+	}
+}
+
+func TestHandleBuiltInMessage(t *testing.T) {
+	_, body := serve(context.Background(), Wrap(ErrorNotFound, "user_id", "u1"))
+	if body.Message != ErrorNotFound.Error() {
+		t.Errorf("message = %q, want %q", body.Message, ErrorNotFound.Error())
+	}
+}
+
 func TestHandleClientDisconnect(t *testing.T) {
 	cases := []struct {
 		name       string

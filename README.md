@@ -82,11 +82,11 @@ var ErrTipSelf = errors.Define("TIP_SELF", http.StatusForbidden, "cannot tip you
 ```
 
 - `Handle` answers with that code and status even when the error is wrapped by `fmt.Errorf("%w")` or `errors.Wrap`
-- The message is sent to the client, so keep it safe to expose
+- The response message is always the defined message: text added by `fmt.Errorf` or nested `Wrap` goes only to the log, so keep the defined message safe to expose
 - `Define` panics on a blank code, a code already in use (built-in or defined), or a status outside 4xx and 5xx
 - Built-in errors still match only by identity: a built-in error wrapped by `fmt.Errorf("%w")` stays `INTERNAL_ERROR` (500)
 
-Every key-value pair passed to `Wrap` is sent to the client as `details`, and nested `Wrap` data also shows up in `message`. Pass `Wrap` only what the client may see, and log the rest.
+The key-value pairs of the outermost `Wrap` are sent to the client as `details`. Pass that `Wrap` only what the client may see, and log the rest. For built-in and unmapped errors, inner `Wrap` data and `fmt.Errorf` text still show up in `message`.
 
 ### Error Response Format
 

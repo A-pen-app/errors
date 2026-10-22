@@ -207,6 +207,16 @@ func getErrorMapping(err error) ErrorMapping {
 	return ErrorMapping{KeyInternalError, http.StatusInternalServerError}
 }
 
+// responseMessage returns the message sent to the client. A defined error answers
+// with its own message, so text wrapped around it stays in the log.
+func responseMessage(err error) string {
+	var defined *definedError
+	if errors.As(err, &defined) {
+		return defined.message
+	}
+	return err.Error()
+}
+
 // sqlStater is satisfied by lib/pq's and pgx's error types, so matching a
 // SQLSTATE needs no driver dependency.
 type sqlStater interface {

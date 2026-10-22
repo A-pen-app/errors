@@ -78,7 +78,7 @@ func handleError(ctx *gin.Context, err error) {
 	// Send error response
 	ctx.AbortWithStatusJSON(status, HttpError{
 		Code:      errorKey,
-		Message:   actualErr.Error(),
+		Message:   responseMessage(actualErr),
 		Details:   details,
 		RequestID: requestID,
 	})
